@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Q&A Hỗ Trợ Phần Mềm</title>
+    <!-- Thư viện PapaParse để đọc file CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 20px auto; 
+            padding: 0 15px; 
+        }
+        
+        /* Tiêu đề với tone màu xanh pastel */
+        h2 {
+            color: #1565c0;
+            border-bottom: 2px solid #e3f2fd;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* Định dạng ô tìm kiếm */
+        .search-box {
+            margin-bottom: 25px;
+        }
+        #searchInput {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 16px;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            box-sizing: border-box;
+            background-color: #f8fafd;
+            transition: all 0.3s ease;
+        }
+        #searchInput:focus {
+            outline: none;
+            border-color: #64b5f6;
+            box-shadow: 0 0 5px rgba(100, 181, 246, 0.4);
+        }
+
+        /* Style cho danh sách câu hỏi */
+        details {
+            background-color: #ffffff;
+            border: 1px solid #e3f2fd;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            padding: 10px 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        summary {
+            font-weight: bold;
+            color: #2c3e50;
+            cursor: pointer;
+            outline: none;
+            padding: 5px 0;
+        }
+        .answer-content {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed #bbdefb;
+            line-height: 1.6;
+            color: #455a64;
+        }
+        .answer-content img { max-width: 100%; border-radius: 4px; margin-top: 10px; }
+        .answer-content iframe { width: 100%; height: 400px; border: none; margin-top: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <h2>Hệ thống Tra cứu Hướng dẫn sử dụng</h2>
+    
+    <!-- Ô tìm kiếm -->
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Nhập từ khóa để tìm kiếm câu hỏi hoặc nội dung...">
+    </div>
+
+    <!-- Nơi hiển thị dữ liệu -->
+    <div id="qa-container">
+        <p>Đang tải dữ liệu...</p>
+    </div>
+
+    <script>
+        // 1. TẢI DỮ LIỆU TỪ GOOGLE SHEETS
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRLCwwEYO7jjM8kp9JZMaeSHJYnisx7aL1MELaDKEv51_LzmaW0sTTB0n-b99yBcCXTcqEhZRPNhvyB/pub?gid=0&single=true&output=csv'; // <-- Sửa dòng này
+
+        Papa.parse(csvUrl, {
+            download: true,
+            header: true,
+            complete: function(results) {
+                const data = results.data;
+                const container = document.getElementById('qa-container');
+                container.innerHTML = '';
+
+                data.forEach(row => {
+                    if (!row.CauHoi) return;
+
+                    let html = `<details class="qa-item">
+                                  <summary>${row.CauHoi}</summary>
+                                  <div class="answer-content">
+                                    <p>${row.CauTraLoi.replace(/\n/g, '<br>')}</p>`;
+                    
+                    if (row.LinkAnh) {
+                        html += `<img src="${row.LinkAnh}" alt="Hình ảnh minh họa">`;
+                    }
+                    if (row.LinkVideo) {
+                        html += `<iframe src="${row.LinkVideo}" allowfullscreen></iframe>`;
+                    }
+                    
+                    html += `</div></details>`;
+                    container.innerHTML += html;
+                });
+            },
+            error: function(err) {
+                document.getElementById('qa-container').innerHTML = '<p>Lỗi tải dữ liệu. Vui lòng kiểm tra lại link.</p>';
+            }
+        });
+
+        // 2. CHỨC NĂNG TÌM KIẾM
+        document.getElementById('searchInput').addEventListener('input', function() {
+            // Lấy từ khóa người dùng gõ, chuyển thành chữ thường để dễ so sánh
+            let filterTerm = this.value.toLowerCase();
+            
+            // Lấy tất cả các thẻ details (các câu hỏi)
+            let qaItems = document.querySelectorAll('.qa-item');
+
+            qaItems.forEach(item => {
+                // Lấy nội dung chữ của cả câu hỏi và câu trả lời
+                let textContent = item.textContent.toLowerCase();
+
+                // Kiểm tra xem nội dung có chứa từ khóa không
+                if (textContent.includes(filterTerm)) {
+                    item.style.display = ''; // Hiện câu hỏi nếu có chứa từ khóa
+                } else {
+                    item.style.display = 'none'; // Ẩn đi nếu không khớp
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
