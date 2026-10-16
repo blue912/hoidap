@@ -3,89 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Q&A Hỗ Trợ Phần Mềm</title>
-    <!-- Thư viện PapaParse để đọc file CSV -->
+    <title>Cổng Tra cứu & Hỗ trợ Phần mềm</title>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            max-width: 800px; 
-            margin: 20px auto; 
-            padding: 0 15px; 
-        }
+        /* Thiết lập không gian rộng và nền xám nhạt giúp nổi bật các khối trắng */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 1200px; margin: 30px auto; padding: 0 20px; background-color: #f4f7f6; color: #333; }
         
-        /* Tiêu đề với tone màu xanh pastel */
-        h2 {
-            color: #1565c0;
-            border-bottom: 2px solid #e3f2fd;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
+        h2 { color: #0d47a1; border-bottom: 3px solid #bbdefb; padding-bottom: 12px; margin-bottom: 25px; display: flex; align-items: center; gap: 10px; }
+        
+        /* Layout chia 2 cột: Cột trái 70%, Cột phải (Sidebar) 30% */
+        .portal-layout { display: flex; gap: 30px; align-items: flex-start; flex-wrap: wrap; }
+        .main-content { flex: 1 1 65%; min-width: 300px; }
+        .sidebar { flex: 0 0 320px; width: 100%; }
 
-        /* Định dạng ô tìm kiếm */
-        .search-box {
-            margin-bottom: 25px;
-        }
-        #searchInput {
-            width: 100%;
-            padding: 12px 15px;
-            font-size: 16px;
-            border: 1px solid #bbdefb;
-            border-radius: 8px;
-            box-sizing: border-box;
-            background-color: #f8fafd;
-            transition: all 0.3s ease;
-        }
-        #searchInput:focus {
-            outline: none;
-            border-color: #64b5f6;
-            box-shadow: 0 0 5px rgba(100, 181, 246, 0.4);
-        }
+        /* THANH TÌM KIẾM */
+        .search-box { position: relative; margin-bottom: 20px; }
+        .search-box svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; fill: #90caf9; }
+        #searchInput { width: 100%; padding: 14px 15px 14px 45px; font-size: 16px; border: 1px solid #bbdefb; border-radius: 8px; box-sizing: border-box; box-shadow: 0 2px 5px rgba(0,0,0,0.02); transition: all 0.3s; }
+        #searchInput:focus { outline: none; border-color: #42a5f5; box-shadow: 0 0 8px rgba(66, 165, 245, 0.3); }
 
-        /* Style cho danh sách câu hỏi */
-        details {
-            background-color: #ffffff;
-            border: 1px solid #e3f2fd;
-            border-radius: 8px;
-            margin-bottom: 12px;
-            padding: 10px 15px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        /* BỘ LỌC DANH MỤC */
+        .category-filters { display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
+        .cat-btn { padding: 8px 16px; border: 1px solid #bbdefb; background-color: #ffffff; color: #1565c0; border-radius: 20px; cursor: pointer; font-weight: 600; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .cat-btn:hover { background-color: #e3f2fd; }
+        .cat-btn.active { background-color: #1565c0; color: #ffffff; border-color: #1565c0; }
+
+        /* HIỂN THỊ Q&A */
+        details { background-color: #ffffff; border: 1px solid #bbdefb; border-radius: 8px; margin-bottom: 15px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
+        summary { background-color: #e3f2fd; font-weight: 600; color: #0d47a1; cursor: pointer; outline: none; padding: 15px 20px; font-size: 16px; transition: background-color 0.2s; }
+        summary:hover { background-color: #bbdefb; }
+        .answer-content { padding: 20px; background-color: #ffffff; line-height: 1.6; color: #37474f; border-top: 1px solid #bbdefb; }
+        .answer-content img { max-width: 100%; height: auto; border-radius: 6px; margin: 15px 0; display: block; }
+        .answer-content iframe { width: 100%; height: 400px; border: none; margin-top: 15px; border-radius: 6px; }
+
+        /* CỘT SIDEBAR (WIDGETS) */
+        .widget { background: #ffffff; border: 1px solid #bbdefb; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); text-align: center; }
+        .widget-title { font-size: 18px; color: #0d47a1; font-weight: bold; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px dashed #e3f2fd; text-transform: uppercase; }
+        
+        .hotline-number { font-size: 24px; color: #d32f2f; font-weight: bold; margin: 10px 0; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        
+        /* Widget Zalo */
+        .zalo-group { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #f0f0f0; }
+        .zalo-group:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .zalo-title { font-weight: bold; color: #333; margin-bottom: 5px; }
+        .zalo-desc { font-size: 13px; color: #666; margin-bottom: 10px; }
+        .zalo-qr { width: 130px; height: 130px; object-fit: contain; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 10px; padding: 5px; background: #fff;}
+        .btn-zalo { display: inline-block; padding: 8px 20px; background-color: #0068ff; color: white; text-decoration: none; border-radius: 20px; font-weight: 600; font-size: 14px; transition: 0.2s; }
+        .btn-zalo:hover { background-color: #0054cc; }
+
+        /* Reponsive cho Mobile: Đẩy sidebar xuống dưới */
+        @media (max-width: 800px) {
+            .portal-layout { flex-direction: column; }
+            .sidebar { flex: auto; }
         }
-        summary {
-            font-weight: bold;
-            color: #2c3e50;
-            cursor: pointer;
-            outline: none;
-            padding: 5px 0;
-        }
-        .answer-content {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px dashed #bbdefb;
-            line-height: 1.6;
-            color: #455a64;
-        }
-        .answer-content img { max-width: 100%; border-radius: 4px; margin-top: 10px; }
-        .answer-content iframe { width: 100%; height: 400px; border: none; margin-top: 10px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
-    <h2>Hệ thống Tra cứu Hướng dẫn sử dụng</h2>
+    <h2><span class="title-icon">📘</span> Cổng Tra cứu Hướng dẫn sử dụng Phần mềm</h2>
     
-    <!-- Ô tìm kiếm -->
-    <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Nhập từ khóa để tìm kiếm câu hỏi hoặc nội dung...">
-    </div>
+    <div class="portal-layout">
+        <!-- CỘT TRÁI: NỘI DUNG Q&A -->
+        <div class="main-content">
+            <div class="search-box">
+                <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                <input type="text" id="searchInput" placeholder="Nhập từ khóa phần mềm hoặc thao tác cần tìm...">
+            </div>
 
-    <!-- Nơi hiển thị dữ liệu -->
-    <div id="qa-container">
-        <p>Đang tải dữ liệu...</p>
+            <!-- Nút chọn danh mục -->
+            <div class="category-filters" id="categoryContainer">
+                <button class="cat-btn active" data-filter="all">Tất cả</button>
+                <button class="cat-btn" data-filter="quản trị">Quản trị</button>
+                <button class="cat-btn" data-filter="lãnh đạo">Lãnh đạo</button>
+                <button class="cat-btn" data-filter="văn thư">Văn thư</button>
+                <button class="cat-btn" data-filter="chuyên viên">Chuyên viên</button>
+            </div>
+
+            <div id="qa-container">
+                <p style="color: #666;">Đang tải dữ liệu hướng dẫn...</p>
+            </div>
+        </div>
+
+        <!-- CỘT PHẢI: WIDGET TIỆN ÍCH -->
+        <div class="sidebar">
+            <!-- Khối Hotline -->
+            <div class="widget">
+                <div class="widget-title">Tổng đài Hỗ trợ IT</div>
+                <p style="font-size: 14px; color: #555; margin-bottom: 5px;">Hỗ trợ lỗi kỹ thuật khẩn cấp 24/7</p>
+                <div class="hotline-number">📞 1900 1234</div>
+            </div>
+
+            <!-- Khối Nhóm Zalo -->
+            <div class="widget">
+                <div class="widget-title">Nhóm Zalo Hỗ trợ</div>
+                
+                <!-- Zalo Group 1 -->
+                <div class="zalo-group">
+                    <div class="zalo-title">Nhóm Dành cho Lãnh đạo & Văn thư</div>
+                    <div class="zalo-desc">Hỗ trợ các vướng mắc về ký số, ban hành văn bản điện tử.</div>
+                    <!-- Thay link ảnh QR của bạn vào src dưới đây -->
+                    <img class="zalo-qr" src="https://placehold.co/150x150?text=QR+Zalo+1" alt="QR Zalo 1">
+                    <br>
+                    <!-- Thay link mời Zalo vào thẻ href dưới đây -->
+                    <a href="https://zalo.me/g/xxxxxxx" target="_blank" class="btn-zalo">Tham gia nhóm</a>
+                </div>
+
+                <!-- Zalo Group 2 -->
+                <div class="zalo-group">
+                    <div class="zalo-title">Nhóm Dành cho Chuyên viên</div>
+                    <div class="zalo-desc">Hỗ trợ thao tác xử lý hồ sơ, lập báo cáo thống kê.</div>
+                    <img class="zalo-qr" src="https://placehold.co/150x150?text=QR+Zalo+2" alt="QR Zalo 2">
+                    <br>
+                    <a href="https://zalo.me/g/yyyyyyy" target="_blank" class="btn-zalo">Tham gia nhóm</a>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // 1. TẢI DỮ LIỆU TỪ GOOGLE SHEETS
-        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRLCwwEYO7jjM8kp9JZMaeSHJYnisx7aL1MELaDKEv51_LzmaW0sTTB0n-b99yBcCXTcqEhZRPNhvyB/pub?gid=0&single=true&output=csv'; // <-- Sửa dòng này
+        marked.use({ breaks: true });
+        // DÁN LINK CSV CỦA BẠN VÀO ĐÂY
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRLCwwEYO7jjM8kp9JZMaeSHJYnisx7aL1MELaDKEv51_LzmaW0sTTB0n-b99yBcCXTcqEhZRPNhvyB/pub?gid=0&single=true&output=csv';
+
+        let currentCategory = 'all'; // Trạng thái bộ lọc hiện tại
+        let currentSearch = '';      // Trạng thái từ khóa hiện tại
 
         Papa.parse(csvUrl, {
             download: true,
@@ -97,49 +141,68 @@
 
                 data.forEach(row => {
                     if (!row.CauHoi) return;
+                    let formattedAnswer = marked.parse(row.CauTraLoi || "");
+                    
+                    // Lấy dữ liệu danh mục từ cột DanhMuc, chuyển thành chữ thường để dễ so sánh
+                    let itemCategory = row.DanhMuc ? row.DanhMuc.toLowerCase() : "";
 
-                    let html = `<details class="qa-item">
+                    // Gắn thuộc tính data-category vào thẻ details để JS dùng làm mốc lọc
+                    let html = `<details class="qa-item" data-category="${itemCategory}">
                                   <summary>${row.CauHoi}</summary>
                                   <div class="answer-content">
-                                    <p>${row.CauTraLoi.replace(/\n/g, '<br>')}</p>`;
-                    
-                    if (row.LinkAnh) {
-                        html += `<img src="${row.LinkAnh}" alt="Hình ảnh minh họa">`;
-                    }
+                                    ${formattedAnswer}`;
                     if (row.LinkVideo) {
                         html += `<iframe src="${row.LinkVideo}" allowfullscreen></iframe>`;
                     }
-                    
                     html += `</div></details>`;
                     container.innerHTML += html;
                 });
             },
-            error: function(err) {
-                document.getElementById('qa-container').innerHTML = '<p>Lỗi tải dữ liệu. Vui lòng kiểm tra lại link.</p>';
+            error: function() {
+                document.getElementById('qa-container').innerHTML = '<p>Lỗi kết nối dữ liệu. Vui lòng thử lại.</p>';
             }
         });
 
-        // 2. CHỨC NĂNG TÌM KIẾM
-        document.getElementById('searchInput').addEventListener('input', function() {
-            // Lấy từ khóa người dùng gõ, chuyển thành chữ thường để dễ so sánh
-            let filterTerm = this.value.toLowerCase();
-            
-            // Lấy tất cả các thẻ details (các câu hỏi)
+        // HÀM XỬ LÝ LỌC KÉP (TÌM KIẾM + DANH MỤC)
+        function filterContent() {
             let qaItems = document.querySelectorAll('.qa-item');
-
+            
             qaItems.forEach(item => {
-                // Lấy nội dung chữ của cả câu hỏi và câu trả lời
                 let textContent = item.textContent.toLowerCase();
-
-                // Kiểm tra xem nội dung có chứa từ khóa không
-                if (textContent.includes(filterTerm)) {
-                    item.style.display = ''; // Hiện câu hỏi nếu có chứa từ khóa
+                let itemCategories = item.getAttribute('data-category');
+                
+                // Kiểm tra xem câu hỏi có chứa từ khóa không
+                let matchSearch = textContent.includes(currentSearch);
+                // Kiểm tra xem câu hỏi có thuộc danh mục đang chọn không (hoặc đang chọn 'Tất cả')
+                let matchCategory = (currentCategory === 'all') || itemCategories.includes(currentCategory);
+                
+                if (matchSearch && matchCategory) {
+                    item.style.display = '';
                 } else {
-                    item.style.display = 'none'; // Ẩn đi nếu không khớp
+                    item.style.display = 'none';
                 }
+            });
+        }
+
+        // Lắng nghe sự kiện gõ ô tìm kiếm
+        document.getElementById('searchInput').addEventListener('input', function() {
+            currentSearch = this.value.toLowerCase();
+            filterContent();
+        });
+
+        // Lắng nghe sự kiện bấm nút Danh mục
+        const catButtons = document.querySelectorAll('.cat-btn');
+        catButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Đổi màu nút được chọn
+                catButtons.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Lấy giá trị data-filter của nút để lọc
+                currentCategory = this.getAttribute('data-filter');
+                filterContent();
             });
         });
     </script>
-
 </body>
 </html>
